@@ -3,7 +3,7 @@ provider:
   gateway: http://127.0.0.1:8080
 
 functions:
-  goodfirstissue:
+  github-app-installations:
     lang: golang-middleware
     handler: ./github-app-installations
     image: github-app-installations:0.1
