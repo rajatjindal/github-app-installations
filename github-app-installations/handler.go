@@ -28,9 +28,16 @@ const (
 	AppIDHeader = "X-App-Id"
 )
 
+type Repo struct {
+	Name    string `json:"name"`
+	HtmlURL string `json:"htmlURL`
+}
+
 type resp struct {
-	GithubLogin         string `json:"ghLogin"`
-	RepositorySelection string `json:"repositorySelection"`
+	GithubLogin         string  `json:"ghLogin"`
+	OrgUserURL          string  `json:"orgUserURL"`
+	RepositorySelection string  `json:"repositorySelection"`
+	Repositories        []*Repo `json:"repositories,omitempty"`
 }
 
 // func main() {
@@ -39,9 +46,9 @@ type resp struct {
 // }
 
 //Handle handles the function call
-func Handle(w http.ResponseWriter, r *http.Request) {
-	key := r.Header.Get(KeyHeader)
-	appID := r.Header.Get(AppIDHeader)
+func Handle(w http.ResponseWriter, req *http.Request) {
+	key := req.Header.Get(KeyHeader)
+	appID := req.Header.Get(AppIDHeader)
 
 	if key == "" || appID == "" {
 		w.WriteHeader(http.StatusBadRequest)
@@ -82,20 +89,39 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 
 	out := []*resp{}
 	for _, ii := range i {
-		var respositorySelection string
-		if stringValue(ii.RepositorySelection) == "all" {
-			respositorySelection = "All Repositories"
+		repositorySelection := stringValue(ii.RepositorySelection)
+		e := &resp{
+			GithubLogin:         stringValue(ii.Account.Login),
+			OrgUserURL:          stringValue(ii.Account.HTMLURL),
+			RepositorySelection: repositorySelection,
 		}
 
-		if stringValue(ii.RepositorySelection) == "selected" {
-			respositorySelection = "Selected Repositories"
+		if repositorySelection == "all" {
+			out = append(out, e)
+			continue
 		}
 
-		out = append(out,
-			&resp{
-				GithubLogin:         stringValue(ii.Account.Login),
-				RepositorySelection: respositorySelection,
+		installationToken, _, err := c.Apps.CreateInstallationToken(context.Background(), ii.GetID())
+		if err != nil {
+			out = append(out, e)
+			continue
+		}
+
+		repos, err := getRepositoriesForInstallation(installationToken.GetToken())
+		if err != nil {
+			out = append(out, e)
+			continue
+		}
+
+		e.Repositories = []*Repo{}
+		for _, r := range repos {
+			e.Repositories = append(e.Repositories, &Repo{
+				Name:    r.GetName(),
+				HtmlURL: stringValue(r.HTMLURL),
 			})
+		}
+
+		out = append(out, e)
 	}
 
 	outBytes, err := json.Marshal(out)
@@ -108,6 +134,37 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(outBytes)
+}
+
+type installationAuth struct {
+	transport http.RoundTripper
+	token     string
+}
+
+func (a *installationAuth) RoundTrip(r *http.Request) (*http.Response, error) {
+	r.Header.Set("Authorization", fmt.Sprintf("bearer %s", a.token))
+	resp, err := a.transport.RoundTrip(r)
+	return resp, err
+}
+
+func getRepositoriesForInstallation(token string) ([]*github.Repository, error) {
+	transport := &installationAuth{
+		transport: http.DefaultTransport,
+		token:     token,
+	}
+
+	client := &http.Client{
+		Transport: transport,
+	}
+
+	ghClient := github.NewClient(client)
+
+	repos, _, err := ghClient.Apps.ListRepos(context.Background(), &github.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	return repos, nil
 }
 
 func stringValue(s *string) string {
