@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
@@ -26,6 +27,9 @@ const (
 
 	//AppIDHeader contains the app id
 	AppIDHeader = "X-App-Id"
+
+	//FormatHeader specifies the return format
+	FormatHeader = "X-Resp-Format"
 )
 
 type Repo struct {
@@ -49,6 +53,7 @@ type resp struct {
 func Handle(w http.ResponseWriter, req *http.Request) {
 	key := req.Header.Get(KeyHeader)
 	appID := req.Header.Get(AppIDHeader)
+	format := req.Header.Get(FormatHeader)
 
 	if key == "" || appID == "" {
 		w.WriteHeader(http.StatusBadRequest)
@@ -122,6 +127,28 @@ func Handle(w http.ResponseWriter, req *http.Request) {
 		}
 
 		out = append(out, e)
+	}
+
+	if format == "readme" {
+		outString := []string{"| Org/User | Repository |"}
+		outString = append(outString, "| ------ | ------ |")
+
+		for _, i := range out {
+			if i.RepositorySelection == "all" {
+				outString = append(outString, fmt.Sprintf("| [%s](%s) | [All](%s) |", i.GithubLogin, i.OrgUserURL, i.OrgUserURL))
+				continue
+			}
+
+			repos := []string{}
+			for _, r := range i.Repositories {
+				repos = append(repos, fmt.Sprintf("[%s](%s)", r.Name, r.HtmlURL))
+			}
+			outString = append(outString, fmt.Sprintf("| [%s](%s) | %s |", i.GithubLogin, i.OrgUserURL, strings.Join(repos, "\n")))
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(strings.Join(outString, "\n")))
+		return
 	}
 
 	outBytes, err := json.Marshal(out)
