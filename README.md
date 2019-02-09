@@ -22,49 +22,114 @@ and you will get output like follows:
 [
   {
     "ghLogin": "helm",
-    "repositorySelection": "All Repositories"
+    "orgUserURL": "https://github.com/helm",
+    "repositorySelection": "all"
   },
   {
     "ghLogin": "reactiverse",
-    "repositorySelection": "Selected Repositories"
+    "orgUserURL": "https://github.com/reactiverse",
+    "repositorySelection": "selected",
+    "repositories": [
+      {
+        "name": "es4x",
+        "HtmlURL": "https://github.com/reactiverse/es4x"
+      }
+    ]
   },
   {
     "ghLogin": "pmlopes",
-    "repositorySelection": "Selected Repositories"
+    "orgUserURL": "https://github.com/pmlopes",
+    "repositorySelection": "selected",
+    "repositories": [
+      {
+        "name": "vertx-starter",
+        "HtmlURL": "https://github.com/pmlopes/vertx-starter"
+      }
+    ]
   },
   {
     "ghLogin": "asyncapi",
-    "repositorySelection": "All Repositories"
+    "orgUserURL": "https://github.com/asyncapi",
+    "repositorySelection": "all"
   },
   {
     "ghLogin": "google",
-    "repositorySelection": "Selected Repositories"
+    "orgUserURL": "https://github.com/google",
+    "repositorySelection": "selected",
+    "repositories": [
+      {
+        "name": "go-github",
+        "HtmlURL": "https://github.com/google/go-github"
+      }
+    ]
   },
   {
     "ghLogin": "asyncy",
-    "repositorySelection": "All Repositories"
+    "orgUserURL": "https://github.com/asyncy",
+    "repositorySelection": "all"
   },
   {
     "ghLogin": "Ewocker",
-    "repositorySelection": "Selected Repositories"
+    "orgUserURL": "https://github.com/Ewocker",
+    "repositorySelection": "selected",
+    "repositories": [
+      {
+        "name": "vue-lodash",
+        "HtmlURL": "https://github.com/Ewocker/vue-lodash"
+      }
+    ]
   },
   {
     "ghLogin": "jetstack",
-    "repositorySelection": "Selected Repositories"
+    "orgUserURL": "https://github.com/jetstack",
+    "repositorySelection": "selected",
+    "repositories": [
+      {
+        "name": "cert-manager",
+        "HtmlURL": "https://github.com/jetstack/cert-manager"
+      }
+    ]
   },
   {
     "ghLogin": "openfaas",
-    "repositorySelection": "All Repositories"
+    "orgUserURL": "https://github.com/openfaas",
+    "repositorySelection": "all"
   },
   {
     "ghLogin": "alexellis",
-    "repositorySelection": "Selected Repositories"
+    "orgUserURL": "https://github.com/alexellis",
+    "repositorySelection": "selected",
+    "repositories": [
+      {
+        "name": "ubiquitous-octo-guacamole",
+        "HtmlURL": "https://github.com/alexellis/ubiquitous-octo-guacamole"
+      }
+    ]
   },
   {
     "ghLogin": "rajatjindal",
-    "repositorySelection": "All Repositories"
+    "orgUserURL": "https://github.com/rajatjindal",
+    "repositorySelection": "all"
   }
 ]
+```
+
+It also supports a readme table format. If you add `X-Resp-Format: readme` header to the request, the output is returned in readme table format as follows:
+
+```
+| Org/User | Repository |
+| ------ | ------ |
+| [helm](https://github.com/helm) | [All](https://github.com/helm) |
+| [reactiverse](https://github.com/reactiverse) | [es4x](https://github.com/reactiverse/es4x) |
+| [pmlopes](https://github.com/pmlopes) | [vertx-starter](https://github.com/pmlopes/vertx-starter) |
+| [asyncapi](https://github.com/asyncapi) | [All](https://github.com/asyncapi) |
+| [google](https://github.com/google) | [go-github](https://github.com/google/go-github) |
+| [asyncy](https://github.com/asyncy) | [All](https://github.com/asyncy) |
+| [Ewocker](https://github.com/Ewocker) | [vue-lodash](https://github.com/Ewocker/vue-lodash) |
+| [jetstack](https://github.com/jetstack) | [cert-manager](https://github.com/jetstack/cert-manager) |
+| [openfaas](https://github.com/openfaas) | [All](https://github.com/openfaas) |
+| [alexellis](https://github.com/alexellis) | [ubiquitous-octo-guacamole](https://github.com/alexellis/ubiquitous-octo-guacamole) |
+| [rajatjindal](https://github.com/rajatjindal) | [All](https://github.com/rajatjindal) |
 ```
 
 # credits
