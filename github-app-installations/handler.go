@@ -92,41 +92,49 @@ func Handle(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	channel := make(chan *resp, len(i))
+	for _, installation := range i {
+		go func(ii *github.Installation, respChan chan *resp) {
+			repositorySelection := stringValue(ii.RepositorySelection)
+			e := &resp{
+				GithubLogin:         stringValue(ii.Account.Login),
+				OrgUserURL:          stringValue(ii.Account.HTMLURL),
+				RepositorySelection: repositorySelection,
+			}
+
+			if repositorySelection == "all" {
+				respChan <- e
+				return
+			}
+
+			installationToken, _, err := c.Apps.CreateInstallationToken(context.Background(), ii.GetID())
+			if err != nil {
+				respChan <- e
+				return
+			}
+
+			repos, err := getRepositoriesForInstallation(installationToken.GetToken())
+			if err != nil {
+				respChan <- e
+				return
+			}
+
+			e.Repositories = []*Repo{}
+			for _, r := range repos {
+				e.Repositories = append(e.Repositories, &Repo{
+					Name:    r.GetName(),
+					HtmlURL: stringValue(r.HTMLURL),
+				})
+			}
+
+			respChan <- e
+		}(installation, channel)
+	}
+
 	out := []*resp{}
-	for _, ii := range i {
-		repositorySelection := stringValue(ii.RepositorySelection)
-		e := &resp{
-			GithubLogin:         stringValue(ii.Account.Login),
-			OrgUserURL:          stringValue(ii.Account.HTMLURL),
-			RepositorySelection: repositorySelection,
-		}
-
-		if repositorySelection == "all" {
-			out = append(out, e)
-			continue
-		}
-
-		installationToken, _, err := c.Apps.CreateInstallationToken(context.Background(), ii.GetID())
-		if err != nil {
-			out = append(out, e)
-			continue
-		}
-
-		repos, err := getRepositoriesForInstallation(installationToken.GetToken())
-		if err != nil {
-			out = append(out, e)
-			continue
-		}
-
-		e.Repositories = []*Repo{}
-		for _, r := range repos {
-			e.Repositories = append(e.Repositories, &Repo{
-				Name:    r.GetName(),
-				HtmlURL: stringValue(r.HTMLURL),
-			})
-		}
-
-		out = append(out, e)
+	for loop := 0; loop < len(i); loop++ {
+		installation := <-channel
+		out = append(out, installation)
 	}
 
 	if format == "readme" {
