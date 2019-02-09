@@ -24,8 +24,8 @@ const (
 	//KeyHeader that contains private key for app
 	KeyHeader = "X-Private-Key"
 
-	//InstallationIDHeader contains the installation id of app
-	InstallationIDHeader = "X-Installation-Id"
+	//AppIDHeader contains the app id
+	AppIDHeader = "X-App-Id"
 )
 
 type resp struct {
@@ -41,25 +41,26 @@ type resp struct {
 //Handle handles the function call
 func Handle(w http.ResponseWriter, r *http.Request) {
 	key := r.Header.Get(KeyHeader)
-	installationID := r.Header.Get(InstallationIDHeader)
+	appID := r.Header.Get(AppIDHeader)
 
-	if key == "" || installationID == "" {
+	if key == "" || appID == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("X-Private-Key and X-Installation-Id headers are mandatory"))
+		msg := fmt.Sprintf("%s and %s headers are mandatory", AppIDHeader, KeyHeader)
+		w.Write([]byte(msg))
 		return
 	}
 
-	iss, err := strconv.Atoi(installationID)
+	iss, err := strconv.Atoi(appID)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(fmt.Sprintf("invalid value of X-Installation-Id [%s]. it should be an integer", installationID)))
+		w.Write([]byte(fmt.Sprintf("invalid value of %s header [%s]. it should be an integer", AppIDHeader, appID)))
 		return
 	}
 
 	decodedKey, err := base64.StdEncoding.DecodeString(key)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(fmt.Sprintf("invalid value of X-Private-Key. failed to decode")))
+		w.Write([]byte(fmt.Sprintf("invalid value of %s. failed to decode", KeyHeader)))
 		return
 	}
 
