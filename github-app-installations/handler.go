@@ -147,11 +147,23 @@ func Handle(w http.ResponseWriter, req *http.Request) {
 				continue
 			}
 
-			repos := []string{}
-			for _, r := range i.Repositories {
-				repos = append(repos, fmt.Sprintf("[%s](%s)", r.Name, r.HtmlURL))
+			listVar := ""
+			if len(i.Repositories) > 1 {
+				listVar = "- "
 			}
-			outString = append(outString, fmt.Sprintf("| [%s](%s) | %s |", i.GithubLogin, i.OrgUserURL, strings.Join(repos, "\n")))
+
+			repos := []string{}
+			max := 5
+			for index, r := range i.Repositories {
+				repos = append(repos, fmt.Sprintf("%s[%s](%s)", listVar, r.Name, r.HtmlURL))
+				done := index + 1
+				remaining := len(i.Repositories) - done
+				if done >= max && remaining > 0 {
+					repos = append(repos, fmt.Sprintf("%sand %d more...", listVar, remaining))
+					break
+				}
+			}
+			outString = append(outString, fmt.Sprintf("| [%s](%s) | %s |", i.GithubLogin, i.OrgUserURL, strings.Join(repos, "<br/>")))
 		}
 
 		w.WriteHeader(http.StatusOK)
