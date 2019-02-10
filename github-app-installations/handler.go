@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
@@ -24,13 +25,23 @@ const (
 	//KeyHeader that contains private key for app
 	KeyHeader = "X-Private-Key"
 
-	//InstallationIDHeader contains the installation id of app
-	InstallationIDHeader = "X-Installation-Id"
+	//AppIDHeader contains the app id
+	AppIDHeader = "X-App-Id"
+
+	//FormatHeader specifies the return format
+	FormatHeader = "X-Resp-Format"
 )
 
+type Repo struct {
+	Name    string `json:"name"`
+	HtmlURL string `json:"htmlURL`
+}
+
 type resp struct {
-	GithubLogin         string `json:"ghLogin"`
-	RepositorySelection string `json:"repositorySelection"`
+	GithubLogin         string  `json:"ghLogin"`
+	OrgUserURL          string  `json:"orgUserURL"`
+	RepositorySelection string  `json:"repositorySelection"`
+	Repositories        []*Repo `json:"repositories,omitempty"`
 }
 
 // func main() {
@@ -39,27 +50,29 @@ type resp struct {
 // }
 
 //Handle handles the function call
-func Handle(w http.ResponseWriter, r *http.Request) {
-	key := r.Header.Get(KeyHeader)
-	installationID := r.Header.Get(InstallationIDHeader)
+func Handle(w http.ResponseWriter, req *http.Request) {
+	key := req.Header.Get(KeyHeader)
+	appID := req.Header.Get(AppIDHeader)
+	format := req.Header.Get(FormatHeader)
 
-	if key == "" || installationID == "" {
+	if key == "" || appID == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("X-Private-Key and X-Installation-Id headers are mandatory"))
+		msg := fmt.Sprintf("%s and %s headers are mandatory", AppIDHeader, KeyHeader)
+		w.Write([]byte(msg))
 		return
 	}
 
-	iss, err := strconv.Atoi(installationID)
+	iss, err := strconv.Atoi(appID)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(fmt.Sprintf("invalid value of X-Installation-Id [%s]. it should be an integer", installationID)))
+		w.Write([]byte(fmt.Sprintf("invalid value of %s header [%s]. it should be an integer", AppIDHeader, appID)))
 		return
 	}
 
 	decodedKey, err := base64.StdEncoding.DecodeString(key)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(fmt.Sprintf("invalid value of X-Private-Key. failed to decode")))
+		w.Write([]byte(fmt.Sprintf("invalid value of %s. failed to decode", KeyHeader)))
 		return
 	}
 
@@ -79,22 +92,83 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	out := []*resp{}
-	for _, ii := range i {
-		var respositorySelection string
-		if stringValue(ii.RepositorySelection) == "all" {
-			respositorySelection = "All Repositories"
-		}
-
-		if stringValue(ii.RepositorySelection) == "selected" {
-			respositorySelection = "Selected Repositories"
-		}
-
-		out = append(out,
-			&resp{
+	channel := make(chan *resp, len(i))
+	for _, installation := range i {
+		go func(ii *github.Installation, respChan chan *resp) {
+			repositorySelection := stringValue(ii.RepositorySelection)
+			e := &resp{
 				GithubLogin:         stringValue(ii.Account.Login),
-				RepositorySelection: respositorySelection,
-			})
+				OrgUserURL:          stringValue(ii.Account.HTMLURL),
+				RepositorySelection: repositorySelection,
+			}
+
+			if repositorySelection == "all" {
+				respChan <- e
+				return
+			}
+
+			installationToken, _, err := c.Apps.CreateInstallationToken(context.Background(), ii.GetID())
+			if err != nil {
+				respChan <- e
+				return
+			}
+
+			repos, err := getRepositoriesForInstallation(installationToken.GetToken())
+			if err != nil {
+				respChan <- e
+				return
+			}
+
+			e.Repositories = []*Repo{}
+			for _, r := range repos {
+				e.Repositories = append(e.Repositories, &Repo{
+					Name:    r.GetName(),
+					HtmlURL: stringValue(r.HTMLURL),
+				})
+			}
+
+			respChan <- e
+		}(installation, channel)
+	}
+
+	out := []*resp{}
+	for loop := 0; loop < len(i); loop++ {
+		installation := <-channel
+		out = append(out, installation)
+	}
+
+	if format == "readme" {
+		outString := []string{"| Org/User | Repository |"}
+		outString = append(outString, "| ------ | ------ |")
+
+		for _, i := range out {
+			if i.RepositorySelection == "all" {
+				outString = append(outString, fmt.Sprintf("| [%s](%s) | [All](%s) |", i.GithubLogin, i.OrgUserURL, i.OrgUserURL))
+				continue
+			}
+
+			listVar := ""
+			if len(i.Repositories) > 1 {
+				listVar = "- "
+			}
+
+			repos := []string{}
+			max := 5
+			for index, r := range i.Repositories {
+				repos = append(repos, fmt.Sprintf("%s[%s](%s)", listVar, r.Name, r.HtmlURL))
+				done := index + 1
+				remaining := len(i.Repositories) - done
+				if done >= max && remaining > 0 {
+					repos = append(repos, fmt.Sprintf("%sand %d more...", listVar, remaining))
+					break
+				}
+			}
+			outString = append(outString, fmt.Sprintf("| [%s](%s) | %s |", i.GithubLogin, i.OrgUserURL, strings.Join(repos, "<br/>")))
+		}
+
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(strings.Join(outString, "\n")))
+		return
 	}
 
 	outBytes, err := json.Marshal(out)
@@ -107,6 +181,37 @@ func Handle(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(outBytes)
+}
+
+type installationAuth struct {
+	transport http.RoundTripper
+	token     string
+}
+
+func (a *installationAuth) RoundTrip(r *http.Request) (*http.Response, error) {
+	r.Header.Set("Authorization", fmt.Sprintf("bearer %s", a.token))
+	resp, err := a.transport.RoundTrip(r)
+	return resp, err
+}
+
+func getRepositoriesForInstallation(token string) ([]*github.Repository, error) {
+	transport := &installationAuth{
+		transport: http.DefaultTransport,
+		token:     token,
+	}
+
+	client := &http.Client{
+		Transport: transport,
+	}
+
+	ghClient := github.NewClient(client)
+
+	repos, _, err := ghClient.Apps.ListRepos(context.Background(), &github.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	return repos, nil
 }
 
 func stringValue(s *string) string {
