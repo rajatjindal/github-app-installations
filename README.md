@@ -1,6 +1,6 @@
 # github-app-installations
 
-github-app-installations queries github to find all orgs/users who have installed this app. It needs your app's private-key and installation-id for generating the token and making request to github api. You can find this information from `https://github.com/settings/apps/<your-app-name>`
+github-app-installations queries github to find all orgs/users who have installed a particular app. It needs the app's private-key and installation-id for generating the token and making request to github api. You can find this information from `https://github.com/settings/apps/<your-app-name>`
 
 A sample request is as follows:
 
