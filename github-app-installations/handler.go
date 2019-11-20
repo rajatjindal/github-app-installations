@@ -30,6 +30,9 @@ const (
 
 	//FormatHeader specifies the return format
 	FormatHeader = "X-Resp-Format"
+
+	//UseLogoHeader specifies if should use logo
+	UseLogoHeader = "X-Use-Logo"
 )
 
 type Repo struct {
@@ -54,6 +57,7 @@ func Handle(w http.ResponseWriter, req *http.Request) {
 	key := req.Header.Get(KeyHeader)
 	appID := req.Header.Get(AppIDHeader)
 	format := req.Header.Get(FormatHeader)
+	useLogo := req.Header.Get(UseLogoHeader) != ""
 
 	if key == "" || appID == "" {
 		w.WriteHeader(http.StatusBadRequest)
@@ -143,7 +147,12 @@ func Handle(w http.ResponseWriter, req *http.Request) {
 
 		for _, i := range out {
 			if i.RepositorySelection == "all" {
-				outString = append(outString, fmt.Sprintf("| [%s](%s) | [All](%s) |", i.GithubLogin, i.OrgUserURL, i.OrgUserURL))
+				if useLogo {
+					outString = append(outString, fmt.Sprintf("| [![%s](%s.png)](%s) | [All](%s) |", i.GithubLogin, i.OrgUserURL, i.OrgUserURL, i.OrgUserURL))
+				} else {
+					outString = append(outString, fmt.Sprintf("| [%s](%s) | [All](%s) |", i.GithubLogin, i.OrgUserURL, i.OrgUserURL))
+				}
+
 				continue
 			}
 
@@ -163,7 +172,11 @@ func Handle(w http.ResponseWriter, req *http.Request) {
 					break
 				}
 			}
-			outString = append(outString, fmt.Sprintf("| [%s](%s) | %s |", i.GithubLogin, i.OrgUserURL, strings.Join(repos, "<br/>")))
+			if useLogo {
+				outString = append(outString, fmt.Sprintf("| [![%s](%s.png)](%s) | %s |", i.GithubLogin, i.OrgUserURL, i.OrgUserURL, strings.Join(repos, "<br/>")))
+			} else {
+				outString = append(outString, fmt.Sprintf("| [%s](%s) | %s |", i.GithubLogin, i.OrgUserURL, strings.Join(repos, "<br/>")))
+			}
 		}
 
 		w.WriteHeader(http.StatusOK)
