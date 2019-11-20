@@ -174,9 +174,9 @@ func Handle(w http.ResponseWriter, req *http.Request) {
 	if format == "readme-logos" {
 		outString := []string{"Note: The images below are the profile images of orgs/users who have enabled the `goodfirstissue` bot on one or more repository.\n\n"}
 		for _, i := range out {
-			// [![developerfred](https://github.com/developerfred.png?size=100)](https://github.com/developerfred)
-			outString = append(outString, fmt.Sprintf(`<img src="%s.png" width="100">`, i.OrgUserURL))
+			outString = append(outString, fmt.Sprintf(`<a href="%s"><img src="%s.png" width="100"></a><span width="10px">&nbsp;</span>\n`, i.OrgUserURL, i.OrgUserURL))
 		}
+
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(strings.Join(outString, "")))
 		return
