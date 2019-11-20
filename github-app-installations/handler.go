@@ -30,9 +30,6 @@ const (
 
 	//FormatHeader specifies the return format
 	FormatHeader = "X-Resp-Format"
-
-	//UseLogoHeader specifies if should use logo
-	UseLogoHeader = "X-Use-Logo"
 )
 
 type Repo struct {
@@ -57,7 +54,6 @@ func Handle(w http.ResponseWriter, req *http.Request) {
 	key := req.Header.Get(KeyHeader)
 	appID := req.Header.Get(AppIDHeader)
 	format := req.Header.Get(FormatHeader)
-	useLogo := req.Header.Get(UseLogoHeader) != ""
 
 	if key == "" || appID == "" {
 		w.WriteHeader(http.StatusBadRequest)
@@ -147,12 +143,7 @@ func Handle(w http.ResponseWriter, req *http.Request) {
 
 		for _, i := range out {
 			if i.RepositorySelection == "all" {
-				if useLogo {
-					outString = append(outString, fmt.Sprintf("| [![%s](%s.png)](%s) | [All](%s) |", i.GithubLogin, i.OrgUserURL, i.OrgUserURL, i.OrgUserURL))
-				} else {
-					outString = append(outString, fmt.Sprintf("| [%s](%s) | [All](%s) |", i.GithubLogin, i.OrgUserURL, i.OrgUserURL))
-				}
-
+				outString = append(outString, fmt.Sprintf("| [%s](%s) | [All](%s) |", i.GithubLogin, i.OrgUserURL, i.OrgUserURL))
 				continue
 			}
 
@@ -172,15 +163,22 @@ func Handle(w http.ResponseWriter, req *http.Request) {
 					break
 				}
 			}
-			if useLogo {
-				outString = append(outString, fmt.Sprintf("| [![%s](%s.png)](%s) | %s |", i.GithubLogin, i.OrgUserURL, i.OrgUserURL, strings.Join(repos, "<br/>")))
-			} else {
-				outString = append(outString, fmt.Sprintf("| [%s](%s) | %s |", i.GithubLogin, i.OrgUserURL, strings.Join(repos, "<br/>")))
-			}
+			outString = append(outString, fmt.Sprintf("| [%s](%s) | %s |", i.GithubLogin, i.OrgUserURL, strings.Join(repos, "<br/>")))
 		}
 
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(strings.Join(outString, "\n")))
+		return
+	}
+
+	if format == "readme-logos" {
+		outString := []string{"Note: The images below are the profile images of orgs/users who have enabled the `goodfirstissue` bot on one or more repository."}
+		for _, i := range out {
+			// [![developerfred](https://github.com/developerfred.png?size=100)](https://github.com/developerfred)
+			outString = append(outString, fmt.Sprintf("[![%s](%s.png?size=100)](%s)", i.GithubLogin, i.OrgUserURL, i.OrgUserURL))
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(strings.Join(outString, "")))
 		return
 	}
 
