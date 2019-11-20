@@ -175,7 +175,7 @@ func Handle(w http.ResponseWriter, req *http.Request) {
 		outString := []string{"Note: The images below are the profile images of orgs/users who have enabled the `goodfirstissue` bot on one or more repository.\n\n"}
 		for _, i := range out {
 			// [![developerfred](https://github.com/developerfred.png?size=100)](https://github.com/developerfred)
-			outString = append(outString, fmt.Sprintf("[![%s](%s.png?size=100 =100x100)](%s)", i.GithubLogin, i.OrgUserURL, i.OrgUserURL))
+			outString = append(outString, fmt.Sprintf(`<img src="%s.png" width="100">`, i.OrgUserURL))
 		}
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(strings.Join(outString, "")))
