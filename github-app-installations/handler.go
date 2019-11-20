@@ -172,7 +172,7 @@ func Handle(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if format == "readme-logos" {
-		outString := []string{"Note: The images below are the profile images of orgs/users who have enabled the `goodfirstissue` bot on one or more repository."}
+		outString := []string{"Note: The images below are the profile images of orgs/users who have enabled the `goodfirstissue` bot on one or more repository.\n\n"}
 		for _, i := range out {
 			// [![developerfred](https://github.com/developerfred.png?size=100)](https://github.com/developerfred)
 			outString = append(outString, fmt.Sprintf("[![%s](%s.png?size=100)](%s)", i.GithubLogin, i.OrgUserURL, i.OrgUserURL))
