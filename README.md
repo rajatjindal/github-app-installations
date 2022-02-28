@@ -2,6 +2,10 @@
 
 github-app-installations queries github to find all orgs/users who have installed a particular app. It needs the app's private-key and installation-id for generating the token and making request to github api. You can find this information from `https://github.com/settings/apps/<your-app-name>`
 
+### Security disclaimer
+
+You should NEVER submit private keys used for sensible personal data or production. Be aware that by giving away your app's private key, it could theoretically be abused to attack its users. A professional developer should be able to do this without sharing your key with a 3rd party. Even GitHub would never ask you to share private keys!
+
 A sample request is as follows:
 
 ## generate base64 value of your private key
