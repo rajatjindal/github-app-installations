@@ -11,7 +11,7 @@ cat /Users/rajatjindal/.ssh/your-app.private-key.pem | base64
 
 ## make request to github-app-installations to find the details
 ```
-curl -vXGET 'https://rajatjindal.o6s.io/github-app-installations' \
+curl -vXGET 'http://localhost:8080/github-app-installations' \
     -H'X-App-Id: <app-id>' \
     -H'X-Private-Key: <base64-value-generated-above>
 ```
