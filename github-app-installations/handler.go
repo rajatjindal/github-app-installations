@@ -28,7 +28,7 @@ const (
 
 type Repo struct {
 	Name    string `json:"name"`
-	HtmlURL string `json:"htmlURL`
+	HtmlURL string `json:"htmlURL"`
 }
 
 type resp struct {
