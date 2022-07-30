@@ -15,12 +15,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-type payload struct {
-	iat int32
-	exp int32
-	iss int
-}
-
 const (
 	//KeyHeader that contains private key for app
 	KeyHeader = "X-Private-Key"
@@ -109,7 +103,7 @@ func Handle(w http.ResponseWriter, req *http.Request) {
 				return
 			}
 
-			installationToken, _, err := c.Apps.CreateInstallationToken(context.Background(), ii.GetID())
+			installationToken, _, err := c.Apps.CreateInstallationToken(context.Background(), ii.GetID(), &github.InstallationTokenOptions{})
 			if err != nil {
 				respChan <- e
 				return
@@ -122,7 +116,7 @@ func Handle(w http.ResponseWriter, req *http.Request) {
 			}
 
 			e.Repositories = []*Repo{}
-			for _, r := range repos {
+			for _, r := range repos.Repositories {
 				e.Repositories = append(e.Repositories, &Repo{
 					Name:    r.GetName(),
 					HtmlURL: stringValue(r.HTMLURL),
@@ -208,7 +202,7 @@ func (a *installationAuth) RoundTrip(r *http.Request) (*http.Response, error) {
 	return resp, err
 }
 
-func getRepositoriesForInstallation(token string) ([]*github.Repository, error) {
+func getRepositoriesForInstallation(token string) (*github.ListRepositories, error) {
 	transport := &installationAuth{
 		transport: http.DefaultTransport,
 		token:     token,
@@ -242,11 +236,6 @@ type authenticator struct {
 	key       []byte
 }
 
-func newAuth() *authenticator {
-	return &authenticator{
-		transport: http.DefaultTransport,
-	}
-}
 func (a *authenticator) GetToken() (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
 		"iat": int32(time.Now().Unix()),
