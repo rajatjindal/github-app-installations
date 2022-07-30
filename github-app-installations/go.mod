@@ -1,6 +1,6 @@
 module github.com/rajatjindal/github-app-installations/github-app-installations
 
-go 1.15
+go 1.18
 
 require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
