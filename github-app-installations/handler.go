@@ -84,7 +84,9 @@ func Handle(w http.ResponseWriter, req *http.Request) {
 
 	client := &http.Client{Transport: transport}
 	c := github.NewClient(client)
-	l := &github.ListOptions{}
+	l := &github.ListOptions{
+		PerPage: 100,
+	}
 	i, _, err := c.Apps.ListInstallations(context.Background(), l)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
