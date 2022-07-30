@@ -1,9 +1,9 @@
-module github.com/rajatjindal/github-app-installations/github-app-installations
+module handler/function
 
 go 1.18
 
 require (
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/golang-jwt/jwt/v4 v4.4.2
 	github.com/google/go-github/v45 v45.2.0
 	github.com/pkg/errors v0.8.1
 )
