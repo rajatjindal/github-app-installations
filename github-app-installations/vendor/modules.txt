@@ -1,0 +1,19 @@
+# github.com/dgrijalva/jwt-go v3.2.0+incompatible
+## explicit
+github.com/dgrijalva/jwt-go
+# github.com/google/go-github/v45 v45.2.0
+## explicit
+github.com/google/go-github/v45/github
+# github.com/google/go-querystring v1.1.0
+github.com/google/go-querystring/query
+# github.com/pkg/errors v0.8.1
+## explicit
+github.com/pkg/errors
+# golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
+golang.org/x/crypto/cast5
+golang.org/x/crypto/openpgp
+golang.org/x/crypto/openpgp/armor
+golang.org/x/crypto/openpgp/elgamal
+golang.org/x/crypto/openpgp/errors
+golang.org/x/crypto/openpgp/packet
+golang.org/x/crypto/openpgp/s2k

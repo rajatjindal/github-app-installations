@@ -11,7 +11,7 @@ import (
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v45/github"
 	"github.com/pkg/errors"
 )
 
