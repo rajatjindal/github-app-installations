@@ -1,4 +1,4 @@
-package function
+package main
 
 import (
 	"context"
@@ -38,12 +38,11 @@ type resp struct {
 	Repositories        []*Repo `json:"repositories,omitempty"`
 }
 
-// func main() {
-// 	http.HandleFunc("/", Handle)
-// 	http.ListenAndServe(":8081", nil)
-// }
+func main() {
+	http.HandleFunc("/", Handle)
+	http.ListenAndServe(":8080", nil)
+}
 
-//Handle handles the function call
 func Handle(w http.ResponseWriter, req *http.Request) {
 	key := req.Header.Get(KeyHeader)
 	appID := req.Header.Get(AppIDHeader)
